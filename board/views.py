@@ -24,7 +24,6 @@ def no_auth_redirect(request, user_id='0'):
         return HttpResponseRedirect('/board/list')
 
 
-
 def list(request):
     boards = Board.objects.all()
 
@@ -68,6 +67,9 @@ def list(request):
 
 def modify(request,board_id):
     board = Board.objects.get(id=board_id)
+
+    no_auth_redirect(request, board.user.id)
+
     data = {
         'board': board
     }
