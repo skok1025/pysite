@@ -1,0 +1,66 @@
+{% extends "../base.html" %}
+{% load mathfilters %}
+
+{% block csslink %}
+<link href="/assets/css/guestbook.css" rel="stylesheet" type="text/css">
+{% endblock %}
+
+
+{% block content %}
+			<div id="guestbook">
+				<form action="/guestbook/add" method="post">{% csrf_token %}
+					<table>
+						<tr>
+							<td>이름</td><td><input type="text" name="name"></td>
+							<td>비밀번호</td><td><input type="password" name="password"></td>
+						</tr>
+						<tr>
+							<td colspan=4><textarea name="contents" id="content"></textarea></td>
+						</tr>
+						<tr>
+							<td colspan=4 align=right><input type="submit" VALUE=" 확인 "></td>
+						</tr>
+					</table>
+				</form>
+				<ul>
+					{# --{{ guestbooklist | length }} : {{ guestbooklist.count | add:1 | sub:2  }}-- #}
+					{% for guestbook in guestbooklist %}
+					<li>
+						{% if forloop.first %}
+							<table style='border-collapse: collapse; border:2px solid #666; background-color:#ddd'>
+								<tr>
+									{% comment 'forloop variable' %}
+									<td>[{{ forloop.revcounter }}]</td>
+									{% endcomment %}
+									<td>[{{ guestbooklist.count | sub:forloop.counter | add:1 }}]</td>
+									<td>{{ guestbook.name }} </td>
+									<td>{{ guestbook.reg_date | date:'Y-m-d H:i:s' }}</td>
+									<td><a href="/guestbook/deleteform/{{ guestbook.id }}">삭제</a></td>
+								</tr>
+								<tr>
+									<td colspan=4>
+										{{ guestbook.contents | linebreaksbr }}
+									</td>
+								</tr>
+							</table>
+						{% else %}
+							<table>
+								<tr>
+									<td>[{{ forloop.revcounter }}]</td>
+									<td>{{ guestbook.name }} </td>
+									<td>{{ guestbook.regdate | date:'Y-m-d H:i:s' }}</td>
+									<td><a href="/guestbook/deleteform/{{ guestbook.id }}">삭제</a></td>
+								</tr>
+								<tr>
+									<td colspan=4>
+										{{ guestbook.contents | linebreaksbr }}
+									</td>
+								</tr>
+							</table>
+						{% endif %}
+						<br>
+					</li>
+					{% endfor %}
+				</ul>
+			</div>
+{% endblock %}

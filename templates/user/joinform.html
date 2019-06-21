@@ -1,0 +1,88 @@
+{% extends '../base.html' %}
+
+{% block csslink %}
+<link href="/assets/css/user.css" rel="stylesheet" type="text/css">
+<script src="/assets/js/jquery/jquery-1.9.0.js"></script>
+<script>
+	$(function(){
+	    // email text field change
+		$("#email").keyup(function() {
+			$("#emailcheck-btn").show();
+			$("#check-image").hide();
+		});
+
+		$("#emailcheck-btn").click(function(){
+
+			var email = $('#email').val()
+			if(email == ''){
+				return;
+			}
+
+			$.ajax({
+				url:'/user/api/checkemail',
+				type:'get',
+				dataType:'json',
+				data:"email="+email,
+				success: function(response){
+					console.log(response);
+
+					if (response.result != 'success') {
+						console.log(response);
+						//console.error(response.message);
+						return;
+					}
+
+					if (response.data == 'exist') {
+						alert("이미 존재하는 이메일 입니다. \n다른 이메일을 사용하세요.");
+						$("#email").focus().val("");
+						return;
+					}
+
+					$("#emailcheck-btn").hide();
+					$("#check-image").show();
+				},
+				error : function(a,b,c) {
+					console.log(a,b,c);
+				}
+			});
+
+		});
+	});
+
+
+</script>
+{% endblock %}
+
+{% block content %}
+			<div id="user">
+
+				<form id="join-form" name="joinForm" method="post" action="/user/join">
+					{% csrf_token %}
+					<label class="block-label" for="name">이름</label>
+					<input id="name" name="name" type="text" value="">
+
+					<label class="block-label" for="email">이메일</label>
+					<input id="email" name="email" type="text" value="">
+					<img id="check-image" style="display: none;" src="/assets/images/check.png"/>
+					<input id="emailcheck-btn" type="button" value="중복체크">
+					
+					<label class="block-label">패스워드</label>
+					<input name="password" type="password" value="">
+					
+					<fieldset>
+						<legend>성별</legend>
+						<label>여</label> <input type="radio" name="gender" value="female" checked="checked">
+						<label>남</label> <input type="radio" name="gender" value="male">
+					</fieldset>
+					
+					<fieldset>
+						<legend>약관동의</legend>
+						<input id="agree-prov" type="checkbox" name="agreeProv" value="y">
+						<label>서비스 약관에 동의합니다.</label>
+					</fieldset>
+					
+					<input type="submit" value="가입하기">
+					
+				</form>
+			</div>
+{% endblock %}

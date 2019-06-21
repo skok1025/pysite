@@ -1,0 +1,86 @@
+{% extends "../base.html" %}
+{% load mathfilters %}
+
+{% block csslink %}
+<link href="/assets/css/board.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+{% endblock %}
+
+
+{% block content %}
+			<div id="board">
+				<form id="search_form" action="" method="post">
+					<input type="text" id="kwd" name="kwd" value="">
+					<input type="submit" value="찾기">
+				</form>
+				<table class="tbl-ex">
+					<tr>
+						<th>번호</th>
+						<th>제목</th>
+						<th>글쓴이</th>
+						<th>조회수</th>
+						<th>작성일</th>
+						<th>&nbsp;</th>
+					</tr>				
+					{% for board in boardlist %}
+
+					{% ifnotequal  board.isexist 1 %}
+						<tr>
+							<td>[{{ forloop.counter }}]</td>
+							<td colspan="5" style="height: 20px;">삭제된 게시물입니다.</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td>[{{ forloop.counter }}]</td>
+							<td style="padding-left: {{board.depth |mul:30 }}px;"><a href="/board/view/{{board.id}}">
+								{% ifnotequal board.depth 0%}
+									<i class="fas fa-arrow-circle-right"></i>
+								{% endifnotequal %}
+								{{board.content}}</a></td>
+							<td>{{board.user.name}}</td>
+							<td>{{board.hit}}</td>
+							<td>{{board.regdate| date:'Y-m-d H:i:s' }}</td>
+							<td>
+								{% ifnotequal  request.session.authuser.id board.user.id %}
+
+								<a
+											href="/board/writeform?replyno={{board.id}}"><i
+											class="fas fa-comment-dots"></i></a>
+								{% else %}
+									<a href="/board/delete/{{board.id}}" class="del">삭제</a>
+								{% endifnotequal %}
+							</td>
+						</tr>
+
+					{% endifnotequal %}
+
+					{% endfor %}
+				</table>
+
+				<!-- pager 추가 -->
+				<div class="pager">
+					<ul>
+						{% if prevpage > 0%}
+						<li><a href="/board/list?currentpage={{prevpage}}">◀</a></li>
+						{% endif%}
+						{% for page in rangelist%}
+						{% if endpage < page %}
+							<li>{{page}}</li>
+
+						{% elif currentpage == page%}
+							<li class="selected">{{page}}</li>
+						{% else %}
+							<li><a href="/board/list?currentpage={{page}}">{{page}}</a></li>
+						{% endif%}
+						{% endfor %}
+						{% if nextpage > 0%}
+						<li><a href="/board/list?currentpage={{nextpage}}">▶</a></li>
+						{% endif%}
+					</ul>
+				</div>
+				<!-- pager 추가 -->
+				<div class="bottom">
+					<a href="/board/writeform" id="new-book">글쓰기</a>
+				</div>				
+			</div>
+{% endblock %}
