@@ -84,7 +84,7 @@ def update(request):
 def view(request, board_id):
     board = Board.objects.get(id=board_id)
     Board.objects.filter(id=board_id).update(hit=F('hit')+1)
-    data = {
+    data = { 
         'board': board
     }
     return render(request, 'board/view.html', data)
