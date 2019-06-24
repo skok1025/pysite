@@ -15,11 +15,11 @@ list_size = 5  # 페이징 리스트 수
 page_size = 5  # 한 페이지의 게시물 수
 
 
-def no_auth_redirect(req, user_id=''):
-    if 'authuser' in req.session.keys():
+def no_auth_redirect(request, user_id=''):
+    if 'authuser' in request.session.keys():
         if user_id == '':  # 기본 write 인 경우 user_id 파라미터를 포함하지 않는다.
             return None
-        if user_id != req.session['authuser']['id']:
+        if user_id != request.session['authuser']['id']:
             return HttpResponseRedirect('/board/list')
         else:  # 권한이 있는 경우
             return None
@@ -44,10 +44,10 @@ def list(request):
     list_num = math.ceil(currentpage / list_size)  # 페이지 리스트 인덱스
     beginpage = list_size * list_num - list_size + 1  # 첫번째 페이지번호
     nextpage = 1 + list_size * list_num  # 현재 페이지 리스트의 다음 페이지 (다음 페이지 리스트의 첫번째 페이지)
-    prevpage = 1 if list_num == 1 else nextpage - list_size - 1
+    prevpage = 1 if list_num == 1 else nextpage - list_size - 1 # 현재 페이지 리스트의 이전 페이지 (이전 페이지 리스트의 마지막 페이지)
     endpage = math.ceil(totalcount / page_size)  # 마지막 페이지
     start = (currentpage - 1) * page_size  # 시작 컨텐츠 인덱스
-    boardlist = Board.objects.filter(title__icontains=kwd).order_by('-groupno', '-orderno')[start:start + page_size]
+    boardlist = boards.order_by('-groupno', '-orderno')[start:start + page_size]
     data = {
         'boardlist': boardlist,
         'currentpage': currentpage,
@@ -95,7 +95,7 @@ def view(request, board_id):
             view_user_cookies = view_user_cookies +','+str(user)
 
     board = Board.objects.get(id=board_id)
-    # Board.objects.filter(id=board_id).update(hit=F('hit')+1)
+
     data = {
         'board': board
     }
@@ -114,7 +114,6 @@ def writeform(request):
         'replyno': replyno
     }
     # result = render(request, 'board/write.html', data)
-
     return render(request, 'board/write.html', data) if result is None else result
 
 
@@ -124,8 +123,6 @@ def write(request):
     board.user = user
     board.title = request.POST['title']
     board.content = request.POST['content']
-
-    print('-------------', request.POST['replyno'])
 
     if int(request.POST['replyno']) != 0:
         # 답글인 경우
@@ -140,13 +137,12 @@ def write(request):
 
     else:
         insert_groupno =1 if Board.objects.aggregate(groupno=Max('groupno'))['groupno'] is None else Board.objects.aggregate(groupno=Max('groupno'))['groupno'] + 1
-        print(insert_groupno, type(insert_groupno))
         board.groupno = insert_groupno
 
     board.save()
     response = HttpResponseRedirect('/board/list')
     cookie_name = f'view_user_{board.id}'
-    set_cookie(response, cookie_name, '', 1)
+    set_cookie(response, cookie_name, '', 1) # 유효기간이 1일인 쿠키를 만든다. (게시물 카운트를 위해)
     return response
 
 
