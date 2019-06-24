@@ -9,7 +9,7 @@ from user.models import User
 import math
 
 list_size = 5  # 페이징 리스트 수
-page_size = 5  # 한 페이지의 게시물 수
+page_size = 3  # 한 페이지의 게시물 수
 
 
 def no_auth_redirect(request, user_id='0'):
@@ -26,11 +26,11 @@ def no_auth_redirect(request, user_id='0'):
 
 def list(request):
     currentpage = int(1 if request.GET.get('currentpage') is None else request.GET.get('currentpage'))
-
-    boards = Board.objects.all()
+    kwd = '' if request.GET.get('kwd') is None else request.GET.get('kwd')
+    boards = Board.objects.filter(title__icontains = kwd)
 
     totalcount = boards.count()
-    pagecount = math.ceil(totalcount/list_size)
+    pagecount = math.ceil(totalcount/page_size)
     print('-----------',totalcount)
 
     if currentpage > pagecount:
@@ -46,7 +46,7 @@ def list(request):
     endpage = math.ceil(totalcount/page_size) # 마지막 페이지
     start = (currentpage - 1) * page_size # 시작 컨텐츠 인덱스
     print(totalcount,page_size,endpage)
-    boardlist = Board.objects.all().order_by('-groupno','-orderno')[start:start + page_size]
+    boardlist = Board.objects.filter(title__icontains = kwd).order_by('-groupno','-orderno')[start:start + page_size]
     type(range(1,4))
     data = {
         'boardlist':boardlist,
@@ -54,7 +54,8 @@ def list(request):
         'endpage':endpage,
         'prevpage':prevpage,
         'nextpage':nextpage,
-        'rangelist':range(beginpage,beginpage+list_size)
+        'rangelist':range(beginpage,beginpage+list_size),
+        'kwd':kwd
     }
 
     return render(request,'board/list.html',data)

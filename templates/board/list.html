@@ -9,7 +9,7 @@
 
 {% block content %}
          <div id="board">
-            <form id="search_form" action="" method="post">
+            <form id="search_form" action="/board/list" method="get">
                <input type="text" id="kwd" name="kwd" value="">
                <input type="submit" value="찾기">
             </form>
@@ -61,7 +61,7 @@
             <div class="pager">
                <ul>
 
-                  <li><a href="/board/list?currentpage={{prevpage}}">◀</a></li>
+                  <li><a href="/board/list?kwd={{kwd}}&currentpage={{prevpage}}">◀</a></li>
 
                   {% for page in rangelist%}
                   {% if endpage < page %}
@@ -70,11 +70,11 @@
                   {% elif currentpage == page%}
                      <li class="selected">{{page}}</li>
                   {% else %}
-                     <li><a href="/board/list?currentpage={{page}}">{{page}}</a></li>
+                     <li><a href="/board/list?kwd={{kwd}}&currentpage={{page}}">{{page}}</a></li>
                   {% endif%}
                   {% endfor %}
                   {% if nextpage > 0%}
-                  <li><a href="/board/list?currentpage={{nextpage}}">▶</a></li>
+                  <li><a href="/board/list?kwd={{kwd}}&currentpage={{nextpage}}">▶</a></li>
                   {% endif%}
                </ul>
             </div>
