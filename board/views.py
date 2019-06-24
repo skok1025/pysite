@@ -9,14 +9,11 @@ from user.models import User
 import math
 
 list_size = 5  # 페이징 리스트 수
-page_size = 3  # 한 페이지의 게시물 수
+page_size = 5  # 한 페이지의 게시물 수
 
 
 def no_auth_redirect(request, user_id='0'):
-
     try:
-        print(request.session['authuser'])
-
         if user_id != request.session['authuser']['id']:
             raise KeyError
 
@@ -62,10 +59,17 @@ def list(request):
 
 
 def modify(request,board_id):
+
     board = Board.objects.get(id=board_id)
 
-    no_auth_redirect(request, board.user.id)
+    try:
+        if board.user.id != request.session['authuser']['id']:
+            raise KeyError
 
+    except KeyError:
+        return HttpResponseRedirect('/board/list')
+
+    
     data = {
         'board': board
     }
@@ -92,9 +96,14 @@ def view(request,board_id):
 
 
 def writeform(request):
+    if 'authuser' in request.session.keys():
+        pass
+    else:
+        return HttpResponseRedirect('/board/list')
+
     replyno =0 if request.GET.get('replyno') is None else request.GET.get('replyno')
 
-    no_auth_redirect(request)
+
 
     data = {
         'replyno': replyno
