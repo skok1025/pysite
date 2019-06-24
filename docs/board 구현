@@ -1,0 +1,28 @@
+
+1.limit 처리
+    start = (page-1) * pagesize
+    board = Board.objects.all.order_by('-id')[start:start+pagesize]
+
+2. insert
+    board = Board()
+    board.title = '...'
+    board.user_id = ------
+
+    board.save()
+
+3. increase
+    board = Board...
+    board.hit = board.hit + 1
+    board.save()
+
+4. TotalCount
+    Board.objects.count()
+
+
+
+
+
+
+
+
+

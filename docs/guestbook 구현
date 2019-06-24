@@ -1,0 +1,16 @@
+
+1. model
+2. /guestbook/delete/10
+3. orm method
+    index(list) -> ok
+    add         -> ok
+    delete
+
+    1. repository 에서 객체를 영속화
+    guestbook = Guestbook.objects.filter(id=20).filter(password='1234')
+    guestbook.delete()
+
+[구현안해도 되는것]
+list.html 템플릿 에서ㅏ
+1. 메세지 index 접는 것 하지 말것
+2. 메세지 개행문자 <br> replace 하지 말것

@@ -1,4 +1,4 @@
-from django.db.models import F
+from django.db.models import F, Max
 from django.forms import model_to_dict
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -8,8 +8,8 @@ from board.models import Board
 from user.models import User
 import math
 
-list_size = 5
-page_size = 5
+list_size = 5  # 페이징 리스트 수
+page_size = 5  # 한 페이지의 게시물 수
 
 
 def no_auth_redirect(request, user_id='0'):
@@ -25,37 +25,32 @@ def no_auth_redirect(request, user_id='0'):
 
 
 def list(request):
-    boards = Board.objects.all()
-
     currentpage = int(1 if request.GET.get('currentpage') is None else request.GET.get('currentpage'))
+
+    boards = Board.objects.all()
 
     totalcount = boards.count()
     pagecount = math.ceil(totalcount/list_size)
-    blockcount = math.ceil(pagecount/page_size)
-    currentblock = math.ceil(currentpage/page_size)
+    print('-----------',totalcount)
 
     if currentpage > pagecount:
         currentpage = pagecount
-        currentblock = math.ceil(currentpage/page_size)
 
     if currentpage < 1:
         currentpage = 1
-        currentblock = 1
 
-    beginpage = 1 if currentblock ==1 else (currentblock-1)*page_size + 1
-    prevpage =(currentblock-1) if currentblock > 1 else 0
-    nextpage = currentblock*page_size+1 if currentblock < blockcount else 0
-    endpage = beginpage-1+list_size if nextpage > 0 else pagecount
-    start = (currentpage - 1) * page_size
-
+    list_num = math.ceil(currentpage / list_size) # 페이지 리스트 인덱스
+    beginpage = list_size*list_num - list_size+1 # 첫번째 페이지번호
+    nextpage = 1 + list_size * list_num # 현재 페이지 리스트의 다음 페이지 (다음 페이지 리스트의 첫번째 페이지)
+    prevpage = 1 if list_num == 1 else nextpage - list_size - 1
+    endpage = math.ceil(totalcount/page_size) # 마지막 페이지
+    start = (currentpage - 1) * page_size # 시작 컨텐츠 인덱스
+    print(totalcount,page_size,endpage)
     boardlist = Board.objects.all().order_by('-groupno','-orderno')[start:start + page_size]
     type(range(1,4))
     data = {
         'boardlist':boardlist,
-        'totalcount':totalcount,
-        'listsize':list_size,
         'currentpage':currentpage,
-        'beginpage':beginpage,
         'endpage':endpage,
         'prevpage':prevpage,
         'nextpage':nextpage,
@@ -112,6 +107,7 @@ def write(request):
     board.user = user
     board.title = request.POST['title']
     board.content = request.POST['content']
+
     print('-------------',request.POST['replyno'])
     if int(request.POST['replyno']) != 0:
         # 답글인 경우
@@ -123,6 +119,12 @@ def write(request):
         board.groupno = originboard.groupno
         board.orderno = originboard.orderno
         board.depth = originboard.depth + 1
+
+    else:
+        insert_groupno = Board.objects.aggregate(groupno=Max('groupno'))['groupno'] + 1
+        print(insert_groupno,type(insert_groupno))
+        board.groupno = insert_groupno
+
     board.save()
 
     return HttpResponseRedirect('/board/list')
