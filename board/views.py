@@ -12,23 +12,25 @@ list_size = 5  # 페이징 리스트 수
 page_size = 5  # 한 페이지의 게시물 수
 
 
-def no_auth_redirect(request, user_id='0'):
-    try:
-        if user_id != request.session['authuser']['id']:
-            raise KeyError
-
-    except KeyError:
+def no_auth_redirect(req, user_id=''):
+    if 'authuser' in req.session.keys():
+        if user_id == '': # 기본 write 인 경우 user_id 파라미터를 포함하지 않는다.
+            return None
+        if user_id != req.session['authuser']['id']:
+            return HttpResponseRedirect('/board/list')
+        else: # 권한이 있는 경우
+            return None
+    else:
         return HttpResponseRedirect('/board/list')
 
 
 def list(request):
     currentpage = int(1 if request.GET.get('currentpage') is None else request.GET.get('currentpage'))
     kwd = '' if request.GET.get('kwd') is None else request.GET.get('kwd')
-    boards = Board.objects.filter(title__icontains = kwd)
+    boards = Board.objects.filter(title__icontains=kwd) # title 이 kwd를 포함하고 있는 모델
 
     totalcount = boards.count()
     pagecount = math.ceil(totalcount/page_size)
-    print('-----------',totalcount)
 
     if currentpage > pagecount:
         currentpage = pagecount
@@ -42,73 +44,63 @@ def list(request):
     prevpage = 1 if list_num == 1 else nextpage - list_size - 1
     endpage = math.ceil(totalcount/page_size) # 마지막 페이지
     start = (currentpage - 1) * page_size # 시작 컨텐츠 인덱스
-    print(totalcount,page_size,endpage)
-    boardlist = Board.objects.filter(title__icontains = kwd).order_by('-groupno','-orderno')[start:start + page_size]
-    type(range(1,4))
+    boardlist = Board.objects.filter(title__icontains=kwd).order_by('-groupno', '-orderno')[start:start + page_size]
     data = {
-        'boardlist':boardlist,
-        'currentpage':currentpage,
-        'endpage':endpage,
-        'prevpage':prevpage,
-        'nextpage':nextpage,
-        'rangelist':range(beginpage,beginpage+list_size),
-        'kwd':kwd
+        'boardlist': boardlist,
+        'currentpage': currentpage,
+        'endpage': endpage,
+        'prevpage': prevpage,
+        'nextpage': nextpage,
+        'rangelist': range(beginpage, beginpage+list_size),
+        'kwd': kwd
     }
 
-    return render(request,'board/list.html',data)
+    return render(request, 'board/list.html', data)
 
 
-def modify(request,board_id):
+def modify(request, board_id):
 
     board = Board.objects.get(id=board_id)
 
-    try:
-        if board.user.id != request.session['authuser']['id']:
-            raise KeyError
-
-    except KeyError:
-        return HttpResponseRedirect('/board/list')
-
-    
+    # 해당 게시물의 작성자 아이디와 현재 세션의 유저아이디를 비교
+    result = no_auth_redirect(request, board.user.id)
     data = {
         'board': board
     }
-    return render(request,'board/modify.html',data)
+
+    return render(request, 'board/modify.html', data) if result is None else result
 
 
 def update(request):
     board = Board.objects.get(id=request.POST['id'])
-
+    result = no_auth_redirect(request,board.user.id)
     board.title = request.POST['title']
     board.content = request.POST['content']
     board.save()
 
-    return HttpResponseRedirect('/board/list')
+    return HttpResponseRedirect('/board/list') if result is None else result
 
 
-def view(request,board_id):
+def view(request, board_id):
     board = Board.objects.get(id=board_id)
-    Board.objects.filter(id=board_id).update(hit = F('hit')+1)
+    Board.objects.filter(id=board_id).update(hit=F('hit')+1)
     data = {
-        'board':board
+        'board': board
     }
-    return render(request,'board/view.html',data)
+    return render(request, 'board/view.html', data)
 
 
 def writeform(request):
-    if 'authuser' in request.session.keys():
-        pass
-    else:
-        return HttpResponseRedirect('/board/list')
+    # 세션 dictionary에 authuser (인증된 유저) 키값이 없다면 게시물 리스트 페이지로 Redirect
+    result = no_auth_redirect(request)
 
-    replyno =0 if request.GET.get('replyno') is None else request.GET.get('replyno')
-
-
+    replyno = 0 if request.GET.get('replyno') is None else request.GET.get('replyno')
 
     data = {
         'replyno': replyno
     }
-    return render(request,'board/write.html',data)
+    # result = render(request, 'board/write.html', data)
+    return render(request, 'board/write.html', data) if result is None else result
 
 
 def write(request):
@@ -118,7 +110,7 @@ def write(request):
     board.title = request.POST['title']
     board.content = request.POST['content']
 
-    print('-------------',request.POST['replyno'])
+    print('-------------', request.POST['replyno'])
     if int(request.POST['replyno']) != 0:
         # 답글인 경우
         originboard = Board.objects.get(id=request.POST['replyno'])
@@ -140,13 +132,15 @@ def write(request):
     return HttpResponseRedirect('/board/list')
 
 
-def delete(request,board_id):
+def delete(request, board_id):
     board = Board.objects.get(id=board_id)
-    print("delete: ",board.user.id)
-    no_auth_redirect(request,board.user.id)
 
-    if request.session['authuser'] == model_to_dict(board.user):
-        board.isexist = 0
-        board.save()
+    result = no_auth_redirect(request, board.user.id)
+    if 'authuser' in request.session.keys():
+        if request.session['authuser'] == model_to_dict(board.user):
+            board.isexist = 0
+            board.save()
 
-    return HttpResponseRedirect('/board/list')
+    return HttpResponseRedirect('/board/list') if result is None else result
+
+
